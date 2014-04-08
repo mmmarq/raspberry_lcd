@@ -50,13 +50,11 @@ def print_digit(digit, position, lcd, rs):
    lcd.lcd_write(0x94 + pos + 0x01)
    lcd.lcd_write(my_digit[5],rs)
 
-def print_dots(lcd,rs,lock):
-   lock.acquire()
+def print_dots(lcd,rs):
    lcd.lcd_write(0xC4)
    lcd.lcd_write(0x3A,rs)
    lcd.lcd_write(0xC9)
    lcd.lcd_write(0x3A,rs)
-   lock.release()
 
 def print_date(local_data,lcd,rs):
    lcd.lcd_write(0x8F)
@@ -72,10 +70,10 @@ def print_date(local_data,lcd,rs):
    lcd.lcd_write(ord(local_data[9]),rs)
 
 def run_clock(lcd,mRs,lock):
-   print_dots(lcd,mRs,lock)
    while True:
       curr_time = strftime("%H:%M:%S", gmtime())
       lock.acquire()
+      print_dots(lcd,mRs)
       print_digit(int(curr_time[0]),0x00,lcd,mRs)
       print_digit(int(curr_time[1]),0x02,lcd,mRs)
       print_digit(int(curr_time[3]),0x05,lcd,mRs)
@@ -96,7 +94,6 @@ def run_banner(lcd,mRs,lock):
       time.sleep(1)
 
 def main():
-
    mRs = 0b00000001
    lcd = lcddriver.lcd()
    lock = threading.Lock()
