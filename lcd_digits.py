@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import thread
+import threading
 import lcddriver
 import datetime
 import time
@@ -28,29 +30,6 @@ digits[7] = [0x00,0x02,0xFE,0x01,0xFE,0x07]
 digits[8] = [0x03,0x02,0x03,0x02,0x00,0x06]
 digits[9] = [0x03,0x02,0x00,0x02,0x00,0x06]
 digits[0] = [0x03,0x02,0x03,0x01,0x00,0x06]
-
-def get_position(position):
-   if position == 1:
-      return 0x00
-   elif position == 2:
-      return 0x02
-   elif position == 3:
-      return 0x04
-   elif position == 4:
-      return 0x06
-   elif position == 5:
-      return 0x08
-   elif position == 6:
-      return 0x0A
-   elif position == 7:
-      return 0x0C
-   elif position == 8:
-      return 0x0E
-   elif position == 9:
-      return 0x10
-   elif position == 10:
-      return 0x12
-
 
 def print_digit(digit, position, lcd, rs):
    #pos = get_position(position)
@@ -90,10 +69,35 @@ def print_date(local_data,lcd,rs):
    lcd.lcd_write(ord(local_data[8]),rs)
    lcd.lcd_write(ord(local_data[9]),rs)
 
+def run_clock(lcd,mRs,lock):
+   print_dots(lcd,mRs)
+   while True:
+      curr_time = strftime("%H:%M:%S", gmtime())
+      lock.acquire()
+      print_digit(int(curr_time[0]),0x00,lcd,mRs)
+      print_digit(int(curr_time[1]),0x02,lcd,mRs)
+      print_digit(int(curr_time[3]),0x05,lcd,mRs)
+      print_digit(int(curr_time[4]),0x07,lcd,mRs)
+      print_digit(int(curr_time[6]),0x0A,lcd,mRs)
+      print_digit(int(curr_time[7]),0x0C,lcd,mRs)
+      print_date(strftime("%d:%m:%Y", gmtime()),lcd,mRs)
+      lock.release()
+      time.sleep(1)
+
+def run_banner(lcd,mRs,lock):
+   count = 0
+   while True:
+      lock.acquire()
+      lcd.lcd_display_string(("Bom dia %d" % count), 4)
+      lock.release()
+      count += 1
+      time.sleep(1)
+
 def main():
 
    mRs = 0b00000001
    lcd = lcddriver.lcd()
+   lock = threading.Lock()
 
    #load user-defined graphs
    lcd.lcd_write(0x40)
@@ -102,18 +106,11 @@ def main():
          lcd.lcd_write(cell,mRs)
 
    lcd.lcd_clear()
-   print_dots(lcd,mRs)
-
+   t1 = thread.start_new_thread(run_clock, (lcd,mRs,lock))
+   t2 = thread.start_new_thread(run_banner, (lcd,mRs,lock))
    while True:
-      curr_time = strftime("%H:%M:%S", gmtime())
-      print_digit(int(curr_time[0]),0x00,lcd,mRs)
-      print_digit(int(curr_time[1]),0x02,lcd,mRs)
-      print_digit(int(curr_time[3]),0x05,lcd,mRs)
-      print_digit(int(curr_time[4]),0x07,lcd,mRs)
-      print_digit(int(curr_time[6]),0x0A,lcd,mRs)
-      print_digit(int(curr_time[7]),0x0C,lcd,mRs)
-      print_date(strftime("%d:%m:%Y", gmtime()),lcd,mRs)
-      time.sleep(1)
+      pass
+   
 
 if __name__ == '__main__':
    main()
