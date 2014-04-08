@@ -50,11 +50,13 @@ def print_digit(digit, position, lcd, rs):
    lcd.lcd_write(0x94 + pos + 0x01)
    lcd.lcd_write(my_digit[5],rs)
 
-def print_dots(lcd,rs):
+def print_dots(lcd,rs,lock):
+   lock.acquire()
    lcd.lcd_write(0xC4)
    lcd.lcd_write(0x3A,rs)
    lcd.lcd_write(0xC9)
    lcd.lcd_write(0x3A,rs)
+   lock.release()
 
 def print_date(local_data,lcd,rs):
    lcd.lcd_write(0x8F)
@@ -70,7 +72,7 @@ def print_date(local_data,lcd,rs):
    lcd.lcd_write(ord(local_data[9]),rs)
 
 def run_clock(lcd,mRs,lock):
-   print_dots(lcd,mRs)
+   print_dots(lcd,mRs,lock)
    while True:
       curr_time = strftime("%H:%M:%S", gmtime())
       lock.acquire()
