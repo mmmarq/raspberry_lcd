@@ -96,11 +96,13 @@ def print_digit(digit, position, lcd, rs):
    lcd.lcd_write(0x94 + pos + 0x01)
    lcd.lcd_write(my_digit[5],rs)
 
-def print_dots(lcd,rs):
+def print_dots(test,lcd,rs):
+   if test: cell = 0x3A
+   else: cell = 0xFE
    lcd.lcd_write(0xC4)
-   lcd.lcd_write(0x3A,rs)
+   lcd.lcd_write(cell,rs)
    lcd.lcd_write(0xC9)
-   lcd.lcd_write(0x3A,rs)
+   lcd.lcd_write(cell,rs)
 
 def print_date(local_data,lcd,rs):
    lcd.lcd_write(0x8F)
@@ -189,9 +191,6 @@ def run_clock(lcd,mRs,lock):
    prev_time = "99:99:99"
    while True:
       curr_time = strftime("%H:%M:%S", gmtime())
-      lock.acquire()
-      print_dots(lcd,mRs)
-      lock.release()
       for pos in [0,1,3,4,6,7]:
          if ( curr_time[pos] != prev_time[pos] ):
             if ( pos == 0 ): cell = 0x00
@@ -200,18 +199,23 @@ def run_clock(lcd,mRs,lock):
             if ( pos == 4 ): cell = 0x07
             if ( pos == 6 ): cell = 0x0A
             if ( pos == 7 ): cell = 0x0C
-
             lock.acquire()
             print_digit(int(curr_time[pos]),cell,lcd,mRs)
-            #print_digit(int(curr_time[0]),0x00,lcd,mRs)
-            #print_digit(int(curr_time[1]),0x02,lcd,mRs)
-            #print_digit(int(curr_time[3]),0x05,lcd,mRs)
-            #print_digit(int(curr_time[4]),0x07,lcd,mRs)
-            #print_digit(int(curr_time[6]),0x0A,lcd,mRs)
-            #print_digit(int(curr_time[7]),0x0C,lcd,mRs)
             lock.release()
-
       prev_time = curr_time
+
+def run_dots(lcd,mRs,lock):
+   test = True
+   while True:
+      if test:
+         lock.acquire()
+         print_dots(True,lcd,mRs)
+         lock.release()
+      else:
+         lock.acquire()
+         print_dots(False,lcd,mRs)
+         lock.release()
+      test = not test
       time.sleep(1)
 
 def run_banner(lcd,lock):
@@ -274,8 +278,9 @@ def main():
 
    lcd.lcd_clear()
    t1 = thread.start_new_thread(run_clock, (lcd,mRs,lock))
-   t2 = thread.start_new_thread(run_banner, (lcd,lock))
-   t3 = thread.start_new_thread(run_date, (lcd,mRs,lock))
+   t2 = thread.start_new_thread(run_dots, (lcd,mRs,lock))
+   t3 = thread.start_new_thread(run_banner, (lcd,lock))
+   t4 = thread.start_new_thread(run_date, (lcd,mRs,lock))
    while True:
       pass
    
