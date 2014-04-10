@@ -134,14 +134,22 @@ def iuv_translator(iuv):
    return "Extremo"
 
 def parse_xml(location_code):
-   file = urllib2.urlopen('http://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
-   #convert to string:
-   data = file.read()
-   #close file because we dont need it anymore:
-   file.close()
-   #parse the xml you downloaded
-   dom = parseString(data)
-   return dom
+   try:
+      file = urllib2.urlopen('http://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
+   except (URLError, HTTPError):
+      return None
+
+   try:
+      #convert to string:
+      data = file.read()
+      #close file because we dont need it anymore:
+      file.close()
+      #parse the xml you downloaded
+   except (IOError):
+      return None
+
+   return parseString(data)
+
 
 def get_weather_data(dom,position):
    if ( position >= 4 ): return []
@@ -179,26 +187,33 @@ def run_clock(lcd,mRs,lock):
       time.sleep(1)
 
 def run_banner(lcd,lock):
+   loop_count = 0
+   dom = parse_xml("2586")
    while True:
-      dom = parse_xml("2586")
+      #Update forecast data only after 100th turn 
+      if ( loop_count > 100 ):
+         dom = parse_xml("2586")
+         loop_count = 0
+      loop_count += 1
+
       for position in [0,1,2,3]:
          weather_data = get_weather_data(dom,position)
          text = week_day(weather_data[0]) + ":"
          #print text + "Max " + weather_data[2] + " Min " + weather_data[3]
-         output = (text + "Max " + weather_data[2] + " Min " + weather_data[3]).ljust(20)
+         output = (text + " Max " + weather_data[2] + " Min " + weather_data[3]).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
          lock.release()
          time.sleep(3)
          #print text + "IUV " + iuv_translator(weather_data[4])
-         output = (text + "UV " + iuv_translator(weather_data[4])).ljust(20)
+         output = (text + " UV " + iuv_translator(weather_data[4])).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
          lock.release()
          time.sleep(3)
          start = 0
          end = 20 - len(text)
-         weather_now = weather[weather_data[1]]
+         weather_now = " " + weather[weather_data[1]]
          #output = text + weather_now[start:(start + end)]
          #print output
          output = (text + weather_now[start:(start + end)]).ljust(20)
