@@ -77,6 +77,17 @@ digits[8] = [0x03,0x02,0x03,0x02,0x00,0x06]
 digits[9] = [0x03,0x02,0x00,0x02,0x00,0x06]
 digits[0] = [0x03,0x02,0x03,0x01,0x00,0x06]
 
+# Week day short name
+weekday_name = {}
+weekday_name[0] = "Seg"
+weekday_name[1] = "Ter"
+weekday_name[2] = "Qua"
+weekday_name[3] = "Qui"
+weekday_name[4] = "Sex"
+weekday_name[5] = "Sab"
+weekday_name[6] = "Dom"
+
+
 def print_digit(digit,position,lcd,rs,lock):
    pos = position
    my_digit = digits[digit]
@@ -122,13 +133,7 @@ def print_date(local_data,lcd,rs,lock):
 def week_day(d):
    if ( strftime("%Y-%m-%d", gmtime()) == d ): return "Hoje"
    temp = datetime.date(int(d.split('-')[0]),int(d.split('-')[1]),int(d.split('-')[2])).weekday()
-   if ( temp == 0 ): return "Seg"
-   if ( temp == 1 ): return "Ter"
-   if ( temp == 2 ): return "Qua"
-   if ( temp == 3 ): return "Qui"
-   if ( temp == 4 ): return "Sex"
-   if ( temp == 5 ): return "Sab"
-   if ( temp == 6 ): return "Dom"
+   return weekday_name[temp]
 
 def iuv_translator(iuv):
    if (( iuv >= 1 ) and ( iuv <= 2)): return "Baixo"
@@ -207,11 +212,13 @@ def run_clock(lcd,mRs,lock):
 
 def run_banner(lcd,lock):
    loop_count = 0
-   dom = parse_xml("2586")
+   new_dom = parse_xml("2586")
+   if ( new_dom != None ): dom = new_dom
    while True:
       #Update forecast data only after 100th turn 
       if ( loop_count > 100 ):
-         dom = parse_xml("2586")
+         new_dom = parse_xml("2586")
+         if ( new_dom != None ): dom = new_dom
          loop_count = 0
       loop_count += 1
 
@@ -219,7 +226,7 @@ def run_banner(lcd,lock):
          weather_data = get_weather_data(dom,position)
          text = week_day(weather_data[0]) + ":"
          #print text + "Max " + weather_data[2] + " Min " + weather_data[3]
-         output = (text + " Max " + weather_data[2] + " Min " + weather_data[3]).ljust(20)
+         output = (text + " Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
          lock.release()
