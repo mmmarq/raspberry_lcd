@@ -77,12 +77,11 @@ digits[8] = [0x03,0x02,0x03,0x02,0x00,0x06]
 digits[9] = [0x03,0x02,0x00,0x02,0x00,0x06]
 digits[0] = [0x03,0x02,0x03,0x01,0x00,0x06]
 
-def print_digit(digit, position, lcd, rs):
-   #pos = get_position(position)
+def print_digit(digit,position,lcd,rs,lock):
    pos = position
-
    my_digit = digits[digit]
 
+   lock.acquire()
    lcd.lcd_write(0x80 + pos)
    lcd.lcd_write(my_digit[0],rs)
    lcd.lcd_write(0x80 + pos + 0x01)
@@ -95,14 +94,18 @@ def print_digit(digit, position, lcd, rs):
    lcd.lcd_write(my_digit[4],rs)
    lcd.lcd_write(0x94 + pos + 0x01)
    lcd.lcd_write(my_digit[5],rs)
+   lock.release()
 
-def print_dots(lcd,rs):
+def print_dots(lcd,rs,lock):
+   lock.acquire()
    lcd.lcd_write(0xC4)
    lcd.lcd_write(0x3A,rs)
    lcd.lcd_write(0xC9)
    lcd.lcd_write(0x3A,rs)
+   lock.release()
 
-def print_date(local_data,lcd,rs):
+def print_date(local_data,lcd,rs,lock):
+   lock.acquire()
    lcd.lcd_write(0x8F)
    lcd.lcd_write(ord(local_data[0]),rs)
    lcd.lcd_write(ord(local_data[1]),rs)
@@ -114,6 +117,7 @@ def print_date(local_data,lcd,rs):
    lcd.lcd_write(ord(local_data[7]),rs)
    lcd.lcd_write(ord(local_data[8]),rs)
    lcd.lcd_write(ord(local_data[9]),rs)
+   lock.release()
 
 def week_day(d):
    if ( strftime("%Y-%m-%d", gmtime()) == d ): return "Hoje"
@@ -173,43 +177,30 @@ def get_weather_data(dom,position):
 
 def run_date(lcd,mRs,lock):
    curr_date = strftime("%d:%m:%Y", gmtime())
-   lock.acquire()
-   print_date(curr_date,lcd,mRs)
-   lock.release()
+   print_date(curr_date,lcd,mRs,lock)
    while True:
       new_date = strftime("%d:%m:%Y", gmtime())
       if ( curr_date != new_date ):
-         lock.acquire()
-         print_date(new_date,lcd,mRs)
-         lock.release()
+         print_date(new_date,lcd,mRs,lock)
          curr_date = new_date
       time.sleep(1)
 
 def run_clock(lcd,mRs,lock):
+   cell = {}
+   cell[0] = 0x0
+   cell[1] = 0x2
+   cell[3] = 0x5
+   cell[4] = 0x7
+   cell[6] = 0xA
+   cell[7] = 0xC
+
    prev_time = "99:99:99"
    while True:
       curr_time = strftime("%H:%M:%S", gmtime())
-      lock.acquire()
-      print_dots(lcd,mRs)
-      lock.release()
       for pos in [0,1,3,4,6,7]:
          if ( curr_time[pos] != prev_time[pos] ):
-            if ( pos == 0 ): cell = 0x00
-            if ( pos == 1 ): cell = 0x02
-            if ( pos == 3 ): cell = 0x05
-            if ( pos == 4 ): cell = 0x07
-            if ( pos == 6 ): cell = 0x0A
-            if ( pos == 7 ): cell = 0x0C
-
-            lock.acquire()
-            print_digit(int(curr_time[pos]),cell,lcd,mRs)
-            #print_digit(int(curr_time[0]),0x00,lcd,mRs)
-            #print_digit(int(curr_time[1]),0x02,lcd,mRs)
-            #print_digit(int(curr_time[3]),0x05,lcd,mRs)
-            #print_digit(int(curr_time[4]),0x07,lcd,mRs)
-            #print_digit(int(curr_time[6]),0x0A,lcd,mRs)
-            #print_digit(int(curr_time[7]),0x0C,lcd,mRs)
-            lock.release()
+            print_digit(int(curr_time[pos]),cell[pos],lcd,mRs,lock)
+            print_dots(lcd,mRs,lock)
 
       prev_time = curr_time
       time.sleep(1)
@@ -251,8 +242,6 @@ def run_banner(lcd,lock):
          time.sleep(1)
          start += 1
          while ( start + end < len(weather_now)+1 ):
-            #output = text + weather_now[start:(start + end)]
-            #print output
             output = (text + weather_now[start:(start + end)]).ljust(20)
             lock.acquire()
             lcd.lcd_display_string(output, 4)
@@ -277,7 +266,8 @@ def main():
    t2 = thread.start_new_thread(run_banner, (lcd,lock))
    t3 = thread.start_new_thread(run_date, (lcd,mRs,lock))
    while True:
-      pass
+      #pass
+      time.sleep(1)
    
 
 if __name__ == '__main__':
