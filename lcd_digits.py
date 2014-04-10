@@ -171,6 +171,20 @@ def get_weather_data(dom,position):
 
    return [dia,tempo,max,min,iuv]
 
+def run_date(lcd,mRs,lock):
+   curr_date = strftime("%d:%m:%Y", gmtime())
+   lock.acquire()
+   print_date(curr_date,lcd,mRs)
+   lock.release()
+   while True:
+      new_date = strftime("%d:%m:%Y", gmtime())
+      if ( curr_date != new_date ):
+         lock.acquire()
+         print_date(new_date,lcd,mRs)
+         lock.release()
+         curr_date = new_date
+      time.sleep(1)
+
 def run_clock(lcd,mRs,lock):
    while True:
       curr_time = strftime("%H:%M:%S", gmtime())
@@ -182,7 +196,6 @@ def run_clock(lcd,mRs,lock):
       print_digit(int(curr_time[4]),0x07,lcd,mRs)
       print_digit(int(curr_time[6]),0x0A,lcd,mRs)
       print_digit(int(curr_time[7]),0x0C,lcd,mRs)
-      print_date(strftime("%d:%m:%Y", gmtime()),lcd,mRs)
       lock.release()
       time.sleep(1)
 
@@ -247,6 +260,7 @@ def main():
    lcd.lcd_clear()
    t1 = thread.start_new_thread(run_clock, (lcd,mRs,lock))
    t2 = thread.start_new_thread(run_banner, (lcd,lock))
+   t3 = thread.start_new_thread(run_date, (lcd,mRs,lock))
    while True:
       pass
    
