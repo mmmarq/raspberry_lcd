@@ -186,17 +186,32 @@ def run_date(lcd,mRs,lock):
       time.sleep(1)
 
 def run_clock(lcd,mRs,lock):
+   prev_time = "99:99:99"
    while True:
       curr_time = strftime("%H:%M:%S", gmtime())
       lock.acquire()
       print_dots(lcd,mRs)
-      print_digit(int(curr_time[0]),0x00,lcd,mRs)
-      print_digit(int(curr_time[1]),0x02,lcd,mRs)
-      print_digit(int(curr_time[3]),0x05,lcd,mRs)
-      print_digit(int(curr_time[4]),0x07,lcd,mRs)
-      print_digit(int(curr_time[6]),0x0A,lcd,mRs)
-      print_digit(int(curr_time[7]),0x0C,lcd,mRs)
       lock.release()
+      for pos in [0,1,3,4,6,7]:
+         if ( curr_time[pos] != prev_time[pos] ):
+            if ( pos == 0 ): cell = 0x00
+            if ( pos == 1 ): cell = 0x02
+            if ( pos == 3 ): cell = 0x05
+            if ( pos == 4 ): cell = 0x07
+            if ( pos == 6 ): cell = 0x0A
+            if ( pos == 7 ): cell = 0x0C
+
+            lock.acquire()
+            print_digit(int(curr_time[pos]),cell,lcd,mRs)
+            #print_digit(int(curr_time[0]),0x00,lcd,mRs)
+            #print_digit(int(curr_time[1]),0x02,lcd,mRs)
+            #print_digit(int(curr_time[3]),0x05,lcd,mRs)
+            #print_digit(int(curr_time[4]),0x07,lcd,mRs)
+            #print_digit(int(curr_time[6]),0x0A,lcd,mRs)
+            #print_digit(int(curr_time[7]),0x0C,lcd,mRs)
+            lock.release()
+
+      prev_time = curr_time
       time.sleep(1)
 
 def run_banner(lcd,lock):
