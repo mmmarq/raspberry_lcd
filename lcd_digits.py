@@ -115,19 +115,56 @@ def print_dots(lcd,rs,lock):
    lcd.lcd_write(0x3A,rs)
    lock.release()
 
-def print_date(local_data,lcd,rs,lock):
+def print_date(local_date,lcd,rs,lock):
    lock.acquire()
-   lcd.lcd_write(0x8F)
-   lcd.lcd_write(ord(local_data[0]),rs)
-   lcd.lcd_write(ord(local_data[1]),rs)
-   lcd.lcd_write(ord('/'),rs)
-   lcd.lcd_write(ord(local_data[3]),rs)
-   lcd.lcd_write(ord(local_data[4]),rs)
-   lcd.lcd_write(0xD0)
-   lcd.lcd_write(ord(local_data[6]),rs)
-   lcd.lcd_write(ord(local_data[7]),rs)
-   lcd.lcd_write(ord(local_data[8]),rs)
-   lcd.lcd_write(ord(local_data[9]),rs)
+   lcd.lcd_write(0x8E)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(ord(local_date[0]),rs)
+   lcd.lcd_write(ord(local_date[1]),rs)
+   lcd.lcd_write(0x2F,rs)
+   lcd.lcd_write(ord(local_date[3]),rs)
+   lcd.lcd_write(ord(local_date[4]),rs)
+   lcd.lcd_write(0xCE)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(ord(local_date[6]),rs)
+   lcd.lcd_write(ord(local_date[7]),rs)
+   lcd.lcd_write(ord(local_date[8]),rs)
+   lcd.lcd_write(ord(local_date[9]),rs)
+   lcd.lcd_write(0xA2)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0xFE,rs)
+   lock.release()
+
+def print_localdata(local_temp,local_ur,lcd,rs,lock):
+   lock.acquire()
+   lcd.lcd_write(0x8E)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0x41,rs)
+   lcd.lcd_write(0x67,rs)
+   lcd.lcd_write(0x6F,rs)
+   lcd.lcd_write(0x72,rs)
+   lcd.lcd_write(0x61,rs)
+
+   lcd.lcd_write(0xCE)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0x54,rs)
+   lcd.lcd_write(0x3A,rs)
+   lcd.lcd_write(ord(local_temp[0]),rs)
+   lcd.lcd_write(ord(local_temp[1]),rs)
+   lcd.lcd_write(0xDF,rs)
+
+   lcd.lcd_write(0xA2)
+   lcd.lcd_write(0xFE,rs)
+   lcd.lcd_write(0x55,rs)
+   lcd.lcd_write(0x3A,rs)
+   lcd.lcd_write(ord(local_ur[0]),rs)
+   lcd.lcd_write(ord(local_ur[1]),rs)
+   lcd.lcd_write(0x25,rs)
    lock.release()
 
 def week_day(d):
@@ -180,26 +217,37 @@ def get_weather_data(dom,position):
 
    return [dia,tempo,max,min,iuv]
 
-def run_date(lcd,mRs,lock):
-   curr_date = strftime("%d:%m:%Y", gmtime())
+def run_date(lcd,mRs,lock,proc_lock):
+   proc_lock.acquire()
+   curr_date = strftime("%d/%m/%Y", gmtime())
    print_date(curr_date,lcd,mRs,lock)
+   proc_lock.release()
+
    while True:
-      new_date = strftime("%d:%m:%Y", gmtime())
-      if ( curr_date != new_date ):
-         print_date(new_date,lcd,mRs,lock)
-         curr_date = new_date
+      proc_lock.acquire()
+      curr_date = strftime("%d/%m/%Y", gmtime())
+      print_date(curr_date,lcd,mRs,lock)
+      proc_lock.release()
       time.sleep(1)
+
+def run_localdata(lcd,mRs,lock,proc_lock):
+   while True:
+      time.sleep(15)
+      proc_lock.acquire()
+      print_localdata("27","45",lcd,mRs,lock)
+      time.sleep(15)
+      proc_lock.release()
 
 def run_clock(lcd,mRs,lock):
    cell = {}
-   cell[0] = 0x0
-   cell[1] = 0x2
-   cell[3] = 0x5
-   cell[4] = 0x7
-   cell[6] = 0xA
-   cell[7] = 0xC
+   cell[0] = 0x00
+   cell[1] = 0x02
+   cell[3] = 0x05
+   cell[4] = 0x07
+   cell[6] = 0x0A
+   cell[7] = 0x0C
 
-   prev_time = "99:99:99"
+   prev_time = "AA:AA:AA"
    while True:
       curr_time = strftime("%H:%M:%S", gmtime())
       for pos in [0,1,3,4,6,7]:
@@ -226,13 +274,13 @@ def run_banner(lcd,lock):
          weather_data = get_weather_data(dom,position)
          text = week_day(weather_data[0]) + ":"
          #print text + "Max " + weather_data[2] + " Min " + weather_data[3]
-         output = (text + " Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
+         output = (text + "Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
          lock.release()
          time.sleep(3)
          #print text + "IUV " + iuv_translator(weather_data[4])
-         output = (text + " UV " + iuv_translator(weather_data[4])).ljust(20)
+         output = (text + (" UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
          lock.release()
@@ -261,6 +309,7 @@ def main():
    mRs = 0b00000001
    lcd = lcddriver.lcd()
    lock = threading.Lock()
+   proc_lock = threading.Lock()
 
    #load user-defined graphs
    lcd.lcd_write(0x40)
@@ -271,7 +320,9 @@ def main():
    lcd.lcd_clear()
    t1 = thread.start_new_thread(run_clock, (lcd,mRs,lock))
    t2 = thread.start_new_thread(run_banner, (lcd,lock))
-   t3 = thread.start_new_thread(run_date, (lcd,mRs,lock))
+   t3 = thread.start_new_thread(run_date, (lcd,mRs,lock,proc_lock))
+   t4 = thread.start_new_thread(run_localdata, (lcd,mRs,lock,proc_lock))
+
    while True:
       #pass
       time.sleep(1)
