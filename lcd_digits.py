@@ -250,43 +250,60 @@ def run_clock(lcd,mRs,lock):
 
 def run_banner(lcd,lock):
    loop_count = 0
-   dom = parse_xml("2586")
+   dom = None
+   try:
+      dom = parse_xml("2586")
+   except Exception,e :
+      print "Caught 1:", e
+      lock.acquire()
+      lcd.lcd_display_string(("Network Error!").center(20), 4)
+      lock.release()
+      time.sleep(30)
    while True:
-      #Update forecast data only after 100th turn 
-      if ( loop_count > 100 ):
+      try:
          dom = parse_xml("2586")
-         loop_count = 0
-      loop_count += 1
-      for position in [0,1,2,3]:
-         weather_data = get_weather_data(dom,position)
-         text = week_day(weather_data[0]) + ":"
-         output = (text + "Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
-         lock.acquire()
-         lcd.lcd_display_string(output, 4)
-         lock.release()
-         time.sleep(3)
-         output = (text + (" UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
-         lock.acquire()
-         lcd.lcd_display_string(output, 4)
-         lock.release()
-         time.sleep(3)
-         start = 0
-         end = 20 - len(text)
-         weather_now = " " + weather[weather_data[1]]
-         output = (text + weather_now[start:(start + end)]).ljust(20)
-         lock.acquire()
-         lcd.lcd_display_string(output, 4)
-         lock.release()
-         time.sleep(1)
-         start += 1
-         while ( start + end < len(weather_now)+1 ):
+         #Update forecast data only after 100th turn 
+         if ( loop_count > 100 ):
+            dom = parse_xml("2586")
+            loop_count = 0
+         loop_count += 1
+         for position in [0,1,2,3]:
+            weather_data = get_weather_data(dom,position)
+            text = week_day(weather_data[0]) + ":"
+            output = (text + "Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
+            lock.acquire()
+            lcd.lcd_display_string(output, 4)
+            lock.release()
+            time.sleep(3)
+            output = (text + (" UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
+            lock.acquire()
+            lcd.lcd_display_string(output, 4)
+            lock.release()
+            time.sleep(3)
+            start = 0
+            end = 20 - len(text)
+            weather_now = " " + weather[weather_data[1]]
             output = (text + weather_now[start:(start + end)]).ljust(20)
             lock.acquire()
             lcd.lcd_display_string(output, 4)
             lock.release()
+            time.sleep(1)
             start += 1
-            time.sleep(0.2)
-         time.sleep(0.8)
+            while ( start + end < len(weather_now)+1 ):
+               output = (text + weather_now[start:(start + end)]).ljust(20)
+               lock.acquire()
+               lcd.lcd_display_string(output, 4)
+               lock.release()
+               start += 1
+               time.sleep(0.2)
+            time.sleep(0.8)
+      except Exception,e :
+         print "Caught 2:", e
+         lock.acquire()
+         lcd.lcd_display_string(("Network Error!").center(20), 4)
+         lock.release()
+         time.sleep(30)
+
 
 def main():
    mRs = 0b00000001
