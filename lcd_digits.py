@@ -9,6 +9,8 @@ import urllib2
 import time
 from time import gmtime, strftime
 from xml.dom.minidom import parseString
+from urllib2 import URLError
+from urllib2 import HTTPError
 
 #Weather translate table
 weather = {}
@@ -180,22 +182,10 @@ def iuv_translator(iuv):
    return "Extremo"
 
 def parse_xml(location_code):
-   try:
-      file = urllib2.urlopen('http://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
-   except (URLError, HTTPError):
-      return None
-
-   try:
-      #convert to string:
-      data = file.read()
-      #close file because we dont need it anymore:
-      file.close()
-      #parse the xml you downloaded
-   except (IOError):
-      return None
-
+   file = urllib2.urlopen('http://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
+   data = file.read()
+   file.close()
    return parseString(data)
-
 
 def get_weather_data(dom,position):
    if ( position >= 4 ): return []
@@ -260,26 +250,21 @@ def run_clock(lcd,mRs,lock):
 
 def run_banner(lcd,lock):
    loop_count = 0
-   new_dom = parse_xml("2586")
-   if ( new_dom != None ): dom = new_dom
+   dom = parse_xml("2586")
    while True:
       #Update forecast data only after 100th turn 
       if ( loop_count > 100 ):
-         new_dom = parse_xml("2586")
-         if ( new_dom != None ): dom = new_dom
+         dom = parse_xml("2586")
          loop_count = 0
       loop_count += 1
-
       for position in [0,1,2,3]:
          weather_data = get_weather_data(dom,position)
          text = week_day(weather_data[0]) + ":"
-         #print text + "Max " + weather_data[2] + " Min " + weather_data[3]
          output = (text + "Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
          lock.release()
          time.sleep(3)
-         #print text + "IUV " + iuv_translator(weather_data[4])
          output = (text + (" UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
@@ -288,8 +273,6 @@ def run_banner(lcd,lock):
          start = 0
          end = 20 - len(text)
          weather_now = " " + weather[weather_data[1]]
-         #output = text + weather_now[start:(start + end)]
-         #print output
          output = (text + weather_now[start:(start + end)]).ljust(20)
          lock.acquire()
          lcd.lcd_display_string(output, 4)
@@ -307,6 +290,7 @@ def run_banner(lcd,lock):
 
 def main():
    mRs = 0b00000001
+
    lcd = lcddriver.lcd()
    lock = threading.Lock()
    proc_lock = threading.Lock()
