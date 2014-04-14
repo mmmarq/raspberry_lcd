@@ -330,7 +330,7 @@ def main():
       if (not t2.isAlive()): t2.start()
       if (not t3.isAlive()): t3.start()
       if (not t4.isAlive()): t4.start()
-      time.sleep(5)
+      time.sleep(10)
 
 if __name__ == '__main__':
    main()

@@ -77,6 +77,12 @@ class lcd:
       self.lcd_device.write_cmd(data | LCD_BACKLIGHT)
       self.lcd_strobe(data)
 
+   def backlight(self, state): # for state, 1 = on, 0 = off
+      if state == 1:
+         self.lcd_device.write_cmd(LCD_BACKLIGHT)
+      elif state == 0:
+         self.lcd_device.write_cmd(LCD_NOBACKLIGHT)
+
    # write a command to lcd
    def lcd_write(self, cmd, mode=0):
       self.lcd_write_four_bits(mode | (cmd & 0xF0))
