@@ -319,15 +319,18 @@ def main():
          lcd.lcd_write(cell,mRs)
 
    lcd.lcd_clear()
-   t1 = thread.start_new_thread(run_clock, (lcd,mRs,lock))
-   t2 = thread.start_new_thread(run_banner, (lcd,lock))
-   t3 = thread.start_new_thread(run_date, (lcd,mRs,lock,proc_lock))
-   t4 = thread.start_new_thread(run_localdata, (lcd,mRs,lock,proc_lock))
+   t1 = threading.Thread(target=run_clock, args=(lcd,mRs,lock))
+   t2 = threading.Thread(target=run_banner, args=(lcd,lock))
+   t3 = threading.Thread(target=run_date, args=(lcd,mRs,lock,proc_lock))
+   t4 = threading.Thread(target=run_localdata, args=(lcd,mRs,lock,proc_lock))
 
    while True:
       #pass
-      time.sleep(1)
-   
+      if (not t1.isAlive()): t1.start()
+      if (not t2.isAlive()): t2.start()
+      if (not t3.isAlive()): t3.start()
+      if (not t4.isAlive()): t4.start()
+      time.sleep(5)
 
 if __name__ == '__main__':
    main()
