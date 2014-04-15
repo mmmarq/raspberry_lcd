@@ -8,6 +8,7 @@ import datetime
 import urllib2
 import httplib
 import time
+import sys
 from time import gmtime, strftime
 from xml.dom.minidom import parseString
 from urllib2 import URLError
@@ -183,7 +184,7 @@ def iuv_translator(iuv):
    return "Extremo"
 
 def parse_xml(location_code):
-   file = urllib2.urlopen('http://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
+   file = urllib2.urlopen('hhhhttp://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
    data = file.read()
    file.close()
    return parseString(data)
@@ -295,7 +296,10 @@ def run_banner(lcd,lock):
       lock.acquire()
       lcd.lcd_display_string(("Network Error!").center(20), 4)
       lock.release()
-      time.sleep(30)
+      time.sleep(10)
+   finally:
+      print "Good bye...."
+      sys.exit(1)
 
 def main():
    mRs = 0b00000001
@@ -312,16 +316,32 @@ def main():
 
    lcd.lcd_clear()
    t1 = threading.Thread(target=run_clock, args=(lcd,mRs,lock))
+   t1.start()
    t2 = threading.Thread(target=run_banner, args=(lcd,lock))
+   t2.start()
    t3 = threading.Thread(target=run_date, args=(lcd,mRs,lock,proc_lock))
+   t3.start()
    t4 = threading.Thread(target=run_localdata, args=(lcd,mRs,lock,proc_lock))
+   t4.start()
 
    while True:
       #pass
-      if (not t1.isAlive()): t1.start()
-      if (not t2.isAlive()): t2.start()
-      if (not t3.isAlive()): t3.start()
-      if (not t4.isAlive()): t4.start()
+      if (not t1.isAlive()):
+         print "Thread 1 dead. Restarting..."
+         t1 = threading.Thread(target=run_clock, args=(lcd,mRs,lock))
+         t1.start()
+      if (not t2.isAlive()):
+         print "Thread 2 dead. Restarting..."
+         t2 = threading.Thread(target=run_banner, args=(lcd,lock))
+         t2.start()
+      if (not t3.isAlive()):
+         print "Thread 3 dead. Restarting..."
+         t3 = threading.Thread(target=run_date, args=(lcd,mRs,lock,proc_lock))
+         t3.start()
+      if (not t4.isAlive()):
+         print "Thread 4 dead. Restarting..."
+         t4 = threading.Thread(target=run_localdata, args=(lcd,mRs,lock,proc_lock))
+         t4.start()
       time.sleep(10)
 
 if __name__ == '__main__':
