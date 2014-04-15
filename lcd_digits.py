@@ -186,7 +186,7 @@ def parse_xml(location_code):
    data = file.read()
    file.close()
    return parseString(data)
-
+      
 def get_weather_data(dom,position):
    if ( position >= 4 ): return []
 
@@ -253,17 +253,9 @@ def run_banner(lcd,lock):
    dom = None
    try:
       dom = parse_xml("2586")
-   except Exception,e :
-      print "Caught 1:", e
-      lock.acquire()
-      lcd.lcd_display_string(("Network Error!").center(20), 4)
-      lock.release()
-      time.sleep(30)
-   while True:
-      try:
-         dom = parse_xml("2586")
+      while True:
          #Update forecast data only after 100th turn 
-         if ( loop_count > 100 ):
+         if ( loop_count > 150 ):
             dom = parse_xml("2586")
             loop_count = 0
          loop_count += 1
@@ -297,13 +289,12 @@ def run_banner(lcd,lock):
                start += 1
                time.sleep(0.2)
             time.sleep(0.8)
-      except Exception,e :
-         print "Caught 2:", e
+   except (urllib2.HTTPError, urllib2.URLError, httplib.HTTPException), e:
+         print "Caught:", e
          lock.acquire()
          lcd.lcd_display_string(("Network Error!").center(20), 4)
          lock.release()
          time.sleep(30)
-
 
 def main():
    mRs = 0b00000001
