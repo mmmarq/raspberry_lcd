@@ -6,6 +6,7 @@ import threading
 import lcddriver
 import datetime
 import urllib2
+import httplib
 import time
 from time import gmtime, strftime
 from xml.dom.minidom import parseString
@@ -290,11 +291,11 @@ def run_banner(lcd,lock):
                time.sleep(0.2)
             time.sleep(0.8)
    except (urllib2.HTTPError, urllib2.URLError, httplib.HTTPException), e:
-         print "Caught:", e
-         lock.acquire()
-         lcd.lcd_display_string(("Network Error!").center(20), 4)
-         lock.release()
-         time.sleep(30)
+      print "Caught:", e
+      lock.acquire()
+      lcd.lcd_display_string(("Network Error!").center(20), 4)
+      lock.release()
+      time.sleep(30)
 
 def main():
    mRs = 0b00000001
