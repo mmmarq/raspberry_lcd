@@ -184,7 +184,7 @@ def iuv_translator(iuv):
    return "Extremo"
 
 def parse_xml(location_code):
-   file = urllib2.urlopen('hhhhttp://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
+   file = urllib2.urlopen('http://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
    data = file.read()
    file.close()
    return parseString(data)
@@ -315,34 +315,36 @@ def main():
          lcd.lcd_write(cell,mRs)
 
    lcd.lcd_clear()
-   t1 = threading.Thread(target=run_clock, args=(lcd,mRs,lock))
-   t1.start()
-   t2 = threading.Thread(target=run_banner, args=(lcd,lock))
-   t2.start()
-   t3 = threading.Thread(target=run_date, args=(lcd,mRs,lock,proc_lock))
-   t3.start()
-   t4 = threading.Thread(target=run_localdata, args=(lcd,mRs,lock,proc_lock))
-   t4.start()
+
+   my_thread_args = {}
+   my_thread_args["run_clock"] = (lcd,mRs,lock)
+   my_thread_args["run_banner"] = (lcd,lock)
+   my_thread_args["run_date"] = (lcd,mRs,lock,proc_lock)
+   my_thread_args["run_localdata"] = (lcd,mRs,lock,proc_lock)
+   my_thread_targets = [run_clock,run_banner,run_date,run_localdata]
+   my_threads = [threading.Thread(target=my_thread_targets[0], args=my_thread_args["run_clock"]),
+                 threading.Thread(target=my_thread_targets[1], args=my_thread_args["run_banner"]),
+                 threading.Thread(target=my_thread_targets[2], args=my_thread_args["run_date"]),
+                 threading.Thread(target=my_thread_targets[3], args=my_thread_args["run_localdata"])]
+
+   for th in my_threads:
+      th.start()
 
    while True:
-      #pass
-      if (not t1.isAlive()):
-         print "Thread 1 dead. Restarting..."
-         t1 = threading.Thread(target=run_clock, args=(lcd,mRs,lock))
-         t1.start()
-      if (not t2.isAlive()):
-         print "Thread 2 dead. Restarting..."
-         t2 = threading.Thread(target=run_banner, args=(lcd,lock))
-         t2.start()
-      if (not t3.isAlive()):
-         print "Thread 3 dead. Restarting..."
-         t3 = threading.Thread(target=run_date, args=(lcd,mRs,lock,proc_lock))
-         t3.start()
-      if (not t4.isAlive()):
-         print "Thread 4 dead. Restarting..."
-         t4 = threading.Thread(target=run_localdata, args=(lcd,mRs,lock,proc_lock))
-         t4.start()
-      time.sleep(10)
+      try:
+         for th in [0,1,2,3]:
+            if (not my_threads[th].isAlive()):
+               print "Thread " + my_thread_targets[th].__name__  + " dead. Restarting..."
+               my_threads[th] = threading.Thread(target=my_thread_targets[th], args=my_thread_args[my_thread_targets[th].__name__])
+               my_threads[th].start()
+
+         time.sleep(5)
+      except (IOError),e:
+         print "Caught:", e
+         lock.acquire()
+         lcd = lcddriver.lcd()
+         lock.release()
+
 
 if __name__ == '__main__':
    main()
