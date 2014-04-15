@@ -175,10 +175,10 @@ def week_day(d):
    return weekday_name[temp]
 
 def iuv_translator(iuv):
-   if (( iuv >= 1 ) and ( iuv <= 2)): return "Baixo"
-   if (( iuv >= 3 ) and ( iuv <= 5)): return "Moderado"
-   if (( iuv >= 6 ) and ( iuv <= 7)): return "Alto"
-   if (( iuv >= 8 ) and ( iuv <= 10)): return "Muito alto"
+   if (( float(iuv) >= 1 ) and ( float(iuv) <= 2 )): return "Baixo"
+   if (( float(iuv) >= 3 ) and ( float(iuv) <= 5 )): return "Moderado"
+   if (( float(iuv) >= 6 ) and ( float(iuv) <= 7 )): return "Alto"
+   if (( float(iuv) >= 8 ) and ( float(iuv) <= 10 )): return "Muito alto"
    return "Extremo"
 
 def parse_xml(location_code):
@@ -275,7 +275,7 @@ def run_banner(lcd,lock):
             lcd.lcd_display_string(output, 4)
             lock.release()
             time.sleep(3)
-            output = (text + (" UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
+            output = (text + ("UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
             lock.acquire()
             lcd.lcd_display_string(output, 4)
             lock.release()
