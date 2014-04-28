@@ -13,12 +13,12 @@
 #define DHTPIN		7
 int dht11_dat[5] = { 0, 0, 0, 0, 0 };
 
-void read_dht11_dat()
+int read_dht11_dat()
 {
 	uint8_t laststate	= HIGH;
 	uint8_t counter		= 0;
 	uint8_t j		= 0, i;
-	float	f; /* fahrenheit */
+	/*float	f;*/ /* fahrenheit */
 
 	dht11_dat[0] = dht11_dat[1] = dht11_dat[2] = dht11_dat[3] = dht11_dat[4] = 0;
 
@@ -68,26 +68,24 @@ void read_dht11_dat()
 	if ( (j >= 40) &&
 	     (dht11_dat[4] == ( (dht11_dat[0] + dht11_dat[1] + dht11_dat[2] + dht11_dat[3]) & 0xFF) ) )
 	{
-		f = dht11_dat[2] * 9. / 5. + 32;
+		/*f = dht11_dat[2] * 9. / 5. + 32;
 		printf( "Humidity = %d.%d %% Temperature = %d.%d *C (%.1f *F)\n",
-			dht11_dat[0], dht11_dat[1], dht11_dat[2], dht11_dat[3], f );
+			dht11_dat[0], dht11_dat[1], dht11_dat[2], dht11_dat[3], f );*/
+		printf( "%d %d",
+                        dht11_dat[0], dht11_dat[2] );
+		return (0);
 	}else  {
-		printf( "Data not good, skip\n" );
+		printf( "%d %d", 0, 0 );
+		return (2);
 	}
 }
 
 int main( void )
 {
-	printf( "Raspberry Pi wiringPi DHT11 Temperature test program\n" );
+	/*printf( "Raspberry Pi wiringPi DHT11 Temperature test program\n" );*/
 
 	if ( wiringPiSetup() == -1 )
 		exit( 1 );
 
-	while ( 1 )
-	{
-		read_dht11_dat();
-		delay( 1000 ); /* wait 1sec to refresh */
-	}
-
-	return(0);
+	return(read_dht11_dat());
 }

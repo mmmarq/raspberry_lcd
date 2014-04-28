@@ -9,6 +9,7 @@ import urllib2
 import httplib
 import time
 import sys
+import subprocess
 from time import gmtime, strftime
 from xml.dom.minidom import parseString
 from urllib2 import URLError
@@ -225,8 +226,13 @@ def run_date(lcd,mRs,lock,proc_lock):
 def run_localdata(lcd,mRs,lock,proc_lock):
    while True:
       time.sleep(15)
+      try:
+         output=subprocess.check_output("dht11/dht11", shell=True)
+      except:
+         if ( output == "" ): output = "0 0"
+      ldata = output.split()
       proc_lock.acquire()
-      print_localdata("27","45",lcd,mRs,lock)
+      print_localdata(ldata[1],ldata[0],lcd,mRs,lock)
       time.sleep(15)
       proc_lock.release()
 
