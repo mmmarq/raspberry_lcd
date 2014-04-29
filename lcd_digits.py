@@ -10,10 +10,14 @@ import httplib
 import time
 import sys
 import subprocess
+from subprocess import Popen, PIPE
 from time import gmtime, strftime
 from xml.dom.minidom import parseString
 from urllib2 import URLError
 from urllib2 import HTTPError
+
+#Loop control
+goodBye = False
 
 #Weather translate table
 weather = {}
@@ -97,80 +101,92 @@ def print_digit(digit,position,lcd,rs,lock):
    pos = position
    my_digit = digits[digit]
 
-   lock.acquire()
-   lcd.lcd_write(0x80 + pos)
-   lcd.lcd_write(my_digit[0],rs)
-   lcd.lcd_write(0x80 + pos + 0x01)
-   lcd.lcd_write(my_digit[1],rs)
-   lcd.lcd_write(0xC0 + pos)
-   lcd.lcd_write(my_digit[2],rs)
-   lcd.lcd_write(0xC0 + pos + 0x01)
-   lcd.lcd_write(my_digit[3],rs)
-   lcd.lcd_write(0x94 + pos)
-   lcd.lcd_write(my_digit[4],rs)
-   lcd.lcd_write(0x94 + pos + 0x01)
-   lcd.lcd_write(my_digit[5],rs)
-   lock.release()
+   try:
+      lock.acquire()
+      lcd.lcd_write(0x80 + pos)
+      lcd.lcd_write(my_digit[0],rs)
+      lcd.lcd_write(0x80 + pos + 0x01)
+      lcd.lcd_write(my_digit[1],rs)
+      lcd.lcd_write(0xC0 + pos)
+      lcd.lcd_write(my_digit[2],rs)
+      lcd.lcd_write(0xC0 + pos + 0x01)
+      lcd.lcd_write(my_digit[3],rs)
+      lcd.lcd_write(0x94 + pos)
+      lcd.lcd_write(my_digit[4],rs)
+      lcd.lcd_write(0x94 + pos + 0x01)
+      lcd.lcd_write(my_digit[5],rs)
+      lock.release()
+   except:
+      lock.release()
 
 def print_dots(lcd,rs,lock):
    lock.acquire()
-   lcd.lcd_write(0xC4)
-   lcd.lcd_write(0x3A,rs)
-   lcd.lcd_write(0xC9)
-   lcd.lcd_write(0x3A,rs)
-   lock.release()
+   try:
+      lcd.lcd_write(0xC4)
+      lcd.lcd_write(0x3A,rs)
+      lcd.lcd_write(0xC9)
+      lcd.lcd_write(0x3A,rs)
+      lock.release()
+   except:
+      lock.release()
 
 def print_date(local_date,lcd,rs,lock):
    lock.acquire()
-   lcd.lcd_write(0x8E)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(ord(local_date[0]),rs)
-   lcd.lcd_write(ord(local_date[1]),rs)
-   lcd.lcd_write(0x2F,rs)
-   lcd.lcd_write(ord(local_date[3]),rs)
-   lcd.lcd_write(ord(local_date[4]),rs)
-   lcd.lcd_write(0xCE)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(ord(local_date[6]),rs)
-   lcd.lcd_write(ord(local_date[7]),rs)
-   lcd.lcd_write(ord(local_date[8]),rs)
-   lcd.lcd_write(ord(local_date[9]),rs)
-   lcd.lcd_write(0xA2)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0xFE,rs)
-   lock.release()
+   try:
+      lcd.lcd_write(0x8E)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(ord(local_date[0]),rs)
+      lcd.lcd_write(ord(local_date[1]),rs)
+      lcd.lcd_write(0x2F,rs)
+      lcd.lcd_write(ord(local_date[3]),rs)
+      lcd.lcd_write(ord(local_date[4]),rs)
+      lcd.lcd_write(0xCE)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(ord(local_date[6]),rs)
+      lcd.lcd_write(ord(local_date[7]),rs)
+      lcd.lcd_write(ord(local_date[8]),rs)
+      lcd.lcd_write(ord(local_date[9]),rs)
+      lcd.lcd_write(0xA2)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0xFE,rs)
+      lock.release()
+   except:
+      lock.release()
 
 def print_localdata(local_temp,local_ur,lcd,rs,lock):
    lock.acquire()
-   lcd.lcd_write(0x8E)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0x41,rs)
-   lcd.lcd_write(0x67,rs)
-   lcd.lcd_write(0x6F,rs)
-   lcd.lcd_write(0x72,rs)
-   lcd.lcd_write(0x61,rs)
+   try:
+      lcd.lcd_write(0x8E)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0x41,rs)
+      lcd.lcd_write(0x67,rs)
+      lcd.lcd_write(0x6F,rs)
+      lcd.lcd_write(0x72,rs)
+      lcd.lcd_write(0x61,rs)
 
-   lcd.lcd_write(0xCE)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0x54,rs)
-   lcd.lcd_write(0x3A,rs)
-   lcd.lcd_write(ord(local_temp[0]),rs)
-   lcd.lcd_write(ord(local_temp[1]),rs)
-   lcd.lcd_write(0xDF,rs)
+      lcd.lcd_write(0xCE)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0x54,rs)
+      lcd.lcd_write(0x3A,rs)
+      lcd.lcd_write(ord(local_temp[0]),rs)
+      lcd.lcd_write(ord(local_temp[1]),rs)
+      lcd.lcd_write(0xDF,rs)
 
-   lcd.lcd_write(0xA2)
-   lcd.lcd_write(0xFE,rs)
-   lcd.lcd_write(0x55,rs)
-   lcd.lcd_write(0x3A,rs)
-   lcd.lcd_write(ord(local_ur[0]),rs)
-   lcd.lcd_write(ord(local_ur[1]),rs)
-   lcd.lcd_write(0x25,rs)
-   lock.release()
+      lcd.lcd_write(0xA2)
+      lcd.lcd_write(0xFE,rs)
+      lcd.lcd_write(0x55,rs)
+      lcd.lcd_write(0x3A,rs)
+      lcd.lcd_write(ord(local_ur[0]),rs)
+      lcd.lcd_write(ord(local_ur[1]),rs)
+      lcd.lcd_write(0x25,rs)
+      lock.release()
+   except:
+      lock.release()
 
 def week_day(d):
    if ( strftime("%Y-%m-%d", gmtime()) == d ): return "Hoje"
@@ -211,12 +227,13 @@ def get_weather_data(dom,position):
    return [dia,tempo,max,min,iuv]
 
 def run_date(lcd,mRs,lock,proc_lock):
+   global goodBye
    proc_lock.acquire()
    curr_date = strftime("%d/%m/%Y", gmtime())
    print_date(curr_date,lcd,mRs,lock)
    proc_lock.release()
 
-   while True:
+   while ( not goodBye ):
       proc_lock.acquire()
       curr_date = strftime("%d/%m/%Y", gmtime())
       print_date(curr_date,lcd,mRs,lock)
@@ -224,7 +241,9 @@ def run_date(lcd,mRs,lock,proc_lock):
       time.sleep(1)
 
 def run_localdata(lcd,mRs,lock,proc_lock):
-   while True:
+   global goodBye
+   output = "0 0"
+   while ( not goodBye ):
       time.sleep(15)
       try:
          output=subprocess.check_output("dht11/dht11", shell=True)
@@ -237,6 +256,7 @@ def run_localdata(lcd,mRs,lock,proc_lock):
       proc_lock.release()
 
 def run_clock(lcd,mRs,lock):
+   global goodBye
    cell = {}
    cell[0] = 0x00
    cell[1] = 0x02
@@ -246,7 +266,7 @@ def run_clock(lcd,mRs,lock):
    cell[7] = 0x0C
 
    prev_time = "AA:AA:AA"
-   while True:
+   while ( not goodBye ):
       curr_time = strftime("%H:%M:%S", gmtime())
       for pos in [0,1,3,4,6,7]:
          if ( curr_time[pos] != prev_time[pos] ):
@@ -257,14 +277,34 @@ def run_clock(lcd,mRs,lock):
       time.sleep(1)
 
 def run_banner(lcd,lock):
+   global goodBye
    loop_count = 0
    dom = None
    try:
       dom = parse_xml("2586")
-      while True:
+   except (urllib2.HTTPError, urllib2.URLError, httplib.HTTPException), e:
+      lock.acquire()
+      try:
+         lcd.lcd_display_string(("Network Error!").center(20), 4)
+         lock.release()
+      except Exception, e:
+         lock.release()
+      time.sleep(10)
+   finally:
+      while ( not goodBye ):
          #Update forecast data only after 100th turn 
          if ( loop_count > 150 ):
-            dom = parse_xml("2586")
+            try:
+               dom = parse_xml("2586")
+            except (urllib2.HTTPError, urllib2.URLError, httplib.HTTPException), e:
+               lock.acquire()
+               try:
+                  lcd.lcd_display_string(("Network Error!").center(20), 4)
+                  lock.release()
+               except Exception, e:
+                  lock.release()
+               time.sleep(10)
+               continue
             loop_count = 0
          loop_count += 1
          for position in [0,1,2,3]:
@@ -272,87 +312,110 @@ def run_banner(lcd,lock):
             text = week_day(weather_data[0]) + ":"
             output = (text + "Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
             lock.acquire()
-            lcd.lcd_display_string(output, 4)
-            lock.release()
+            try:
+               lcd.lcd_display_string(output, 4)
+               lock.release()
+            except:
+               lock.release()
             time.sleep(3)
             output = (text + ("UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
             lock.acquire()
-            lcd.lcd_display_string(output, 4)
-            lock.release()
+            try:
+               lcd.lcd_display_string(output, 4)
+               lock.release()            
+            except:
+               lock.release()
             time.sleep(3)
             start = 0
             end = 20 - len(text)
             weather_now = " " + weather[weather_data[1]]
             output = (text + weather_now[start:(start + end)]).ljust(20)
             lock.acquire()
-            lcd.lcd_display_string(output, 4)
-            lock.release()
+            try:
+               lcd.lcd_display_string(output, 4)
+               lock.release()            
+            except:
+               lock.release()
             time.sleep(1)
             start += 1
             while ( start + end < len(weather_now)+1 ):
                output = (text + weather_now[start:(start + end)]).ljust(20)
                lock.acquire()
-               lcd.lcd_display_string(output, 4)
-               lock.release()
+               try:
+                  lcd.lcd_display_string(output, 4)
+                  lock.release()            
+               except:
+                  lock.release()
                start += 1
                time.sleep(0.2)
             time.sleep(0.8)
-   except (urllib2.HTTPError, urllib2.URLError, httplib.HTTPException), e:
-      print "Caught:", e
-      lock.acquire()
-      lcd.lcd_display_string(("Network Error!").center(20), 4)
-      lock.release()
-      time.sleep(10)
-   finally:
-      print "Good bye...."
-      sys.exit(1)
 
 def main():
    mRs = 0b00000001
+   running = False
+   my_threads = []
+   global goodBye
 
-   lcd = lcddriver.lcd()
+   #semaphores
    lock = threading.Lock()
    proc_lock = threading.Lock()
 
-   #load user-defined graphs
-   lcd.lcd_write(0x40)
-   for mycells in ['1','2','3','4','5','6','7','8']:
-      for cell in cells[mycells]:
-         lcd.lcd_write(cell,mRs)
-
-   lcd.lcd_clear()
-
-   my_thread_args = {}
-   my_thread_args["run_clock"] = (lcd,mRs,lock)
-   my_thread_args["run_banner"] = (lcd,lock)
-   my_thread_args["run_date"] = (lcd,mRs,lock,proc_lock)
-   my_thread_args["run_localdata"] = (lcd,mRs,lock,proc_lock)
-   my_thread_targets = [run_clock,run_banner,run_date,run_localdata]
-   my_threads = [threading.Thread(target=my_thread_targets[0], args=my_thread_args["run_clock"]),
-                 threading.Thread(target=my_thread_targets[1], args=my_thread_args["run_banner"]),
-                 threading.Thread(target=my_thread_targets[2], args=my_thread_args["run_date"]),
-                 threading.Thread(target=my_thread_targets[3], args=my_thread_args["run_localdata"])]
-
-   for th in my_threads:
-      th.start()
-
    while True:
-      try:
-         for th in [0,1,2,3]:
-            if (not my_threads[th].isAlive()):
-               print "Thread " + my_thread_targets[th].__name__  + " dead. Restarting..."
-               my_threads[th] = threading.Thread(target=my_thread_targets[th], args=my_thread_args[my_thread_targets[th].__name__])
-               my_threads[th].start()
+      p1 = Popen(["/usr/sbin/i2cdetect","-y","1"], stdout=PIPE)
+      p2 = Popen(["grep", "20:"], stdin=p1.stdout, stdout=PIPE)
+      p1.stdout.close()
+      output = p2.communicate()[0]
+      p2.stdout.close()
+      devAddr = output.split()[8]
 
-         time.sleep(5)
-      except (IOError),e:
-         print "Caught:", e
-         lock.acquire()
-         lcd = lcddriver.lcd()
-         lock.release()
+      if ((devAddr == "27")  and  (not running)):
+         print "Starting threads..."
+
+         try:
+            lcd = lcddriver.lcd()
+            #load user-defined graphs
+            lcd.lcd_write(0x40)
+            for mycells in ['1','2','3','4','5','6','7','8']:
+               for cell in cells[mycells]:
+                  lcd.lcd_write(cell,mRs)
+            lcd.lcd_clear()
+         except:
+            continue
+
+         my_thread_args = {}
+         my_thread_args["run_clock"] = (lcd,mRs,lock)
+         my_thread_args["run_banner"] = (lcd,lock)
+         my_thread_args["run_date"] = (lcd,mRs,lock,proc_lock)
+         my_thread_args["run_localdata"] = (lcd,mRs,lock,proc_lock)
+         my_thread_targets = [run_clock,run_banner,run_date,run_localdata]
+         my_threads = [threading.Thread(target=my_thread_targets[0], args=my_thread_args["run_clock"]),
+                       threading.Thread(target=my_thread_targets[1], args=my_thread_args["run_banner"]),
+                       threading.Thread(target=my_thread_targets[2], args=my_thread_args["run_date"]),
+                       threading.Thread(target=my_thread_targets[3], args=my_thread_args["run_localdata"])]
+
+         for th in my_threads:
+            th.start()
+
+         running = True
+
+      if ((devAddr != "27") and (running)):
+
+         goodBye = True
+
+         while (my_threads[0].isAlive() or my_threads[1].isAlive() or my_threads[2].isAlive() or my_threads[3].isAlive()):
+            for th in [0,1,2,3]:
+               if (my_threads[th].isAlive()):
+                  print "Thread " + my_thread_targets[th].__name__  + " still alive"
+            time.sleep(3)
+            print ""
+         print "All tasks killed!!! lets restart..."
+         running = False
+         goodBye = False
+         continue
+
+      time.sleep(5)
 
 
 if __name__ == '__main__':
    main()
-
 
