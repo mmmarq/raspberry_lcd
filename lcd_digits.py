@@ -286,7 +286,7 @@ def run_date(lcd,mRs,lock,proc_lock):
       #Release proc lock to make local data display possible
       proc_lock.release()
       #Wait a while for next iteration
-      time.sleep(1)
+      time.sleep(3)
 
 #Function to show local Temperature and Air Humidity data 
 def run_localdata(lcd,mRs,lock,proc_lock):
