@@ -349,7 +349,7 @@ def run_clock(lcd,mRs,lock):
       time.sleep(1)
 
 #Function to show weather data
-def run_banner(lcd,lock):
+def run_banner(lcd,rs,lock):
    #Create global var entry
    global goodBye
    #Start weather data read control (just to dont read weather data all the time)
@@ -399,6 +399,7 @@ def run_banner(lcd,lock):
          loop_count += 1
          #Parse XML to get weather data
          for position in [0,1,2,3]:
+            clean_banner(lcd,rs,lock)
             #Store weather week day
             weather_data = get_weather_data(dom,position)
             text = week_day(weather_data[0]) + ":"
@@ -453,6 +454,35 @@ def run_banner(lcd,lock):
             #Wait for show next day info
             time.sleep(0.8)
 
+#Function to clean banner line
+def clean_banner(lcd,rs,lock):
+   #Set effect start address
+   start = 0xDD
+   #Print effect
+   for size in [0,1,2,3,4,5,6,7,8,9]:
+      print "size " + str(size)
+      lock.acquire()
+      try:
+         lcd.lcd_write(start)
+         lcd.lcd_write(0xFF,rs)
+         i = 0
+         while ( i <= size * 2 ):
+            lcd.lcd_write(0xFE,rs)
+            i += 2
+            print "i " + str(i)
+            time.sleep(0.1)
+         lcd.lcd_write(0xFF,rs)
+         lock.release()
+      except:
+         lock.release()
+      start -= 1
+      lock.acquire()
+      try:
+         lcd.lcd_display_string("                    ", 4)
+         lock.release()
+      except:
+         lock.release()
+
 def main():
    #Constant needed by lcd driver
    mRs = 0b00000001
@@ -501,7 +531,7 @@ def main():
          #Build thread parameters array
          my_thread_args = {}
          my_thread_args["run_clock"] = (lcd,mRs,lock)
-         my_thread_args["run_banner"] = (lcd,lock)
+         my_thread_args["run_banner"] = (lcd,mRs,lock)
          my_thread_args["run_date"] = (lcd,mRs,lock,proc_lock)
          my_thread_args["run_localdata"] = (lcd,mRs,lock,proc_lock)
          #Build array with functions that threads should run
