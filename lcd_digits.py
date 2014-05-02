@@ -12,7 +12,7 @@ import time
 import sys
 import subprocess
 from subprocess import Popen, PIPE
-from time import gmtime, strftime
+from time import localtime, strftime
 from xml.dom.minidom import parseString
 from urllib2 import URLError
 from urllib2 import HTTPError
@@ -212,7 +212,7 @@ def print_localdata(local_temp,local_ur,lcd,rs,lock):
 
 #Function to translate given date into week day
 def week_day(d):
-   if ( strftime("%Y-%m-%d", gmtime()) == d ): return "Hoje"
+   if ( strftime("%Y-%m-%d", localtime()) == d ): return "Hoje"
    temp = datetime.date(int(d.split('-')[0]),int(d.split('-')[1]),int(d.split('-')[2])).weekday()
    return weekday_name[temp]
 
@@ -270,7 +270,7 @@ def run_date(lcd,mRs,lock,proc_lock):
    #Get proclock to prevent local data take display control
    proc_lock.acquire()
    #Get current date from system
-   curr_date = strftime("%d/%m/%Y", gmtime())
+   curr_date = strftime("%d/%m/%Y", localtime())
    #print current date
    print_date(curr_date,lcd,mRs,lock)
    #Release proc lock to make local data display possible
@@ -280,7 +280,7 @@ def run_date(lcd,mRs,lock,proc_lock):
       #Release proc lock to make local data display possible
       proc_lock.acquire()
       #Get current date from system
-      curr_date = strftime("%d/%m/%Y", gmtime())
+      curr_date = strftime("%d/%m/%Y", localtime())
       #print current date
       print_date(curr_date,lcd,mRs,lock)
       #Release proc lock to make local data display possible
@@ -334,7 +334,7 @@ def run_clock(lcd,mRs,lock):
    # run time until main thread ask to die
    while ( not goodBye ):
       #Get current time
-      curr_time = strftime("%H:%M:%S", gmtime())
+      curr_time = strftime("%H:%M:%S", localtime())
       #Print each time digit (excluding dots) into LCD 
       for pos in [0,1,3,4,6,7]:
          #Check if digit changes since last iteration
