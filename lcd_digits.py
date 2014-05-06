@@ -300,7 +300,7 @@ def run_localdata(lcd,mRs,lock,proc_lock):
       time.sleep(15)
       try:
          #Read sensor data
-         output=subprocess.check_output("dht11/dht11", shell=True)
+         output=subprocess.check_output("./dht11", shell=True)
       except:
          #If sensor reading fail, set default local data if it is first thread run
          if ( output == "" ): output = "0 0"
