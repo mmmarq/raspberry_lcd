@@ -11,7 +11,7 @@ from time import localtime, strftime
 
 def main():
   EXE = "sudo /media/2/code/raspberry_lcd/dht11"
-  LOG = "/media/2/log/local_data.log"
+  LOG = "/media/2/log/"+strftime("%Y-%m_local_data.log", localtime())
 
   while True:
     try:
