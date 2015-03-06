@@ -11,7 +11,7 @@ from time import localtime, strftime
 
 def main():
   EXE = "sudo /media/2/code/raspberry_lcd/dht11"
-  LOG = "/media/2/log/"+strftime("%Y-%m_local_data.log", localtime())
+  LOG = "/media/2/log/local_data.log"
 
   while True:
     try:
@@ -21,11 +21,11 @@ def main():
       #Parse local data
       ldata = output.split()
       #Get date
-      date = strftime("%d-%m-%Y %H:%M", localtime())
+      date = strftime("%Y,%m,%d,%H:%M", localtime())
       #Open log file to write
       f = open(LOG,'a')
       #Save data into log file
-      f.write(date + ' ' + ldata[1] + ' ' + ldata[0] + '\n')
+      f.write(date + ',' + ldata[1] + ',' + ldata[0] + '\n')
       #Close log file
       f.close()
       #Stop loop
