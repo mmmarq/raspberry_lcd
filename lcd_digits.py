@@ -258,7 +258,7 @@ def iuv_translator(iuv):
 #Function to read weather data from openweathermap.org
 def read_json(location_code):
    #Open HTTP connection
-   file = urllib2.urlopen('http://api.openweathermap.org/data/2.5/forecast/daily?q='+location_code+'&mode=xml&units=metric&cnt=7')
+   file = urllib2.urlopen('http://api.openweathermap.org/data/2.5/forecast/daily?q='+location_code+'&mode=json&units=metric&cnt=4')
    #Read xml data from web site
    data = file.read()
    #Close file (connection)
@@ -275,14 +275,13 @@ def get_weather_data(json_data,position):
    dia = datetime.datetime.fromtimestamp(int(json_data['list'][position]['dt'])).strftime('%Y-%m-%d')
 
    #Read weather condition data
-   temp0 = str(json_data['list'][0]['weather'][0]['id'])
+   tempo = str(json_data['list'][position]['weather'][0]['id'])
 
    #Read higher expected temperature
-   tmax = str(json_data['list'][0]['temp']['max']).split('.')[0]
+   tmax = str(json_data['list'][position]['temp']['max']).split('.')[0]
 
    #Read minor expected temperature
-   xmlTag = json_data.getElementsByTagName('minima')[position].toxml()
-   tmin = str(json_data['list'][0]['temp']['min']).split('.')[0]
+   tmin = str(json_data['list'][position]['temp']['min']).split('.')[0]
    
    #Return weather data from given position
    return [dia,tempo,tmax,tmin]
