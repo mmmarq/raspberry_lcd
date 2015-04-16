@@ -20,6 +20,9 @@ from urllib2 import HTTPError
 #Location code to retrieve data
 locationCode = "Itapira,br"
 
+#Define weaher forecast len (up to 16)
+forecastLen = 4
+
 #Loop control
 goodBye = False
 
@@ -257,8 +260,11 @@ def iuv_translator(iuv):
 
 #Function to read weather data from openweathermap.org
 def read_json(location_code):
+   #Forecast len denine
+   global forecastLen
+
    #Open HTTP connection
-   file = urllib2.urlopen('http://api.openweathermap.org/data/2.5/forecast/daily?q='+location_code+'&mode=json&units=metric&cnt=4')
+   file = urllib2.urlopen('http://api.openweathermap.org/data/2.5/forecast/daily?q='+location_code+'&mode=json&units=metric&cnt='+str(forecastLen))
    #Read xml data from web site
    data = file.read()
    #Close file (connection)
@@ -268,9 +274,6 @@ def read_json(location_code):
 
 #Function to read weather data from parsed XML
 def get_weather_data(json_data,position):
-   #Check if position is not grater and 3
-   if ( position >= 4 ): return []
-
    #Read date
    dia = datetime.datetime.fromtimestamp(int(json_data['list'][position]['dt'])).strftime('%Y-%m-%d')
 
@@ -377,6 +380,8 @@ def run_banner(lcd,lock):
    global locationCode
    #Create global var entry
    global goodBye
+   #Forecast len definition
+   global forecastLen
    #Start weather data read control (just to dont read weather data all the time)
    loop_count = 0
    #Initialize xml parse var
@@ -422,8 +427,8 @@ def run_banner(lcd,lock):
             loop_count = 0
          #Increase weather data read control
          loop_count += 1
-         #Parse XML to get weather data
-         for position in [0,1,2,3]:
+         #Parse XML to get weather data forecastLen
+         for position in range(forecastLen):
             #Store weather week day
             weather_data = get_weather_data(json_data,position)
             text = week_day(weather_data[0]) + ":"
