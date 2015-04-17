@@ -4,64 +4,95 @@
 #Import needed libs
 import thread
 import threading
+import subprocess
 import lcddriver
 import datetime
 import urllib2
 import httplib
 import time
 import sys
-import subprocess
+import json
 from subprocess import Popen, PIPE
 from time import localtime, strftime
-from xml.dom.minidom import parseString
 from urllib2 import URLError
 from urllib2 import HTTPError
+
+#Location code to retrieve data
+locationCode = "Itapira,br"
 
 #Loop control
 goodBye = False
 
 #Weather translate table
 weather = {}
-weather["ec"] = "Encoberto com Chuvas Isoladas"
-weather["ci"] = "Chuvas Isoladas"
-weather["c"] = "Chuva"
-weather["in"] = "Instavel"
-weather["pp"] = "Poss. de Pancadas de Chuva"
-weather["cm"] = "Chuva pela Manha"
-weather["cn"] = "Chuva a Noite"
-weather["pt"] = "Pancadas de Chuva a Tarde"
-weather["pm"] = "Pancadas de Chuva pela Manha"
-weather["np"] = "Nublado e Pancadas de Chuva"
-weather["pc"] = "Pancadas de Chuva"
-weather["pn"] = "Parcialmente Nublado"
-weather["cv"] = "Chuvisco"
-weather["ch"] = "Chuvoso"
-weather["t"] = "Tempestade"
-weather["ps"] = "Predominio de Sol"
-weather["e"] = "Encoberto"
-weather["n"] = "Nublado"
-weather["cl"] = "Ceu Claro"
-weather["nv"] = "Nevoeiro"
-weather["g"] = "Geada"
-weather["ne"] = "Neve"
-weather["nd"] = "Nao Definido"
-weather["pnt"] = "Pancadas de Chuva a Noite"
-weather["psc"] = "Possibilidade de Chuva"
-weather["pcm"] = "Possibilidade de Chuva pela Manha"
-weather["pct"] = "Possibilidade de Chuva a Tarde"
-weather["pcn"] = "Possibilidade de Chuva a Noite"
-weather["npt"] = "Nublado com Pancadas a Tarde"
-weather["npn"] = "Nublado com Pancadas a Noite"
-weather["ncn"] = "Nublado com Poss. de Chuva a Noite"
-weather["nct"] = "Nublado com Poss. de Chuva a Tarde"
-weather["ncm"] = "Nubl. c/ Poss. de Chuva pela Manha"
-weather["npm"] = "Nublado com Pancadas pela Manha"
-weather["npp"] = "Nublado com Possibilidade de Chuva"
-weather["vn"] = "Variacao de Nebulosidade"
-weather["ct"] = "Chuva a Tarde"
-weather["ppn"] = "Poss. de Panc. de Chuva a Noite"
-weather["ppt"] = "Poss. de Panc. de Chuva a Tarde"
-weather["ppm"] = "Poss. de Panc. de Chuva pela Manha"
+weather["200"] = "Temporal com Chuva fraca"
+weather["201"] = "Temporal"
+weather["202"] = "Tempestade"
+weather["210"] = "Tempestade Elétrica"
+weather["211"] = "Temporal"
+weather["212"] = "Temporal"
+weather["221"] = "Risco de Temporal"
+weather["230"] = "Temporal"
+weather["231"] = "Temporal"
+weather["232"] = "Temporal"
+weather["300"] = "Garoa"
+weather["301"] = "Garoa"
+weather["302"] = "Garoa intensa"
+weather["310"] = "Chuviscos"
+weather["311"] = "Garoa com Chuva"
+weather["312"] = "Garoa Intensa"
+weather["313"] = "Garoa com Chuva"
+weather["314"] = "Chuva Forte"
+weather["321"] = "Chuva"
+weather["500"] = "Chuva fraca"
+weather["501"] = "Chuva"
+weather["502"] = "Chuva intensa"
+weather["503"] = "Chuva forte"
+weather["504"] = "Temporal"
+weather["511"] = "Chuva com risco de granizo"
+weather["520"] = "Chuva com relâmpagos"
+weather["521"] = "Chuva"
+weather["522"] = "Pancadas de Chuva"
+weather["531"] = "Risco de Chuva"
+weather["600"] = "Neve fraca"
+weather["601"] = "Neve"
+weather["602"] = "Neve intensa"
+weather["611"] = "Granizo"
+weather["612"] = "Chuva com Granizo"
+weather["615"] = "Relâmpago, Chuva e Neve"
+weather["616"] = "Chuva e Neve"
+weather["620"] = "Relâmpago e Neve"
+weather["621"] = "Garoa com Neve"
+weather["622"] = "Neve intensa com Garoa"
+weather["701"] = "Névoa"
+weather["711"] = "Fumaça"
+weather["721"] = "Neblina"
+weather["731"] = "Tempestade de Areia"
+weather["741"] = "Nublado"
+weather["751"] = "Areia"
+weather["761"] = "Poeira"
+weather["762"] = "Cinzas Vulcânicas"
+weather["771"] = "Rajadas de Vento"
+weather["781"] = "Tornado"
+weather["900"] = "Tornado"
+weather["901"] = "Tempestade Tropical"
+weather["902"] = "Furacão"
+weather["903"] = "Frio"
+weather["904"] = "Quente"
+weather["905"] = "Ventania"
+weather["906"] = "Granizo"
+weather["950"] = "Ambiente"
+weather["951"] = "Calmo"
+weather["952"] = "Brisa"
+weather["953"] = "Leve Brisa"
+weather["954"] = "Brisa"
+weather["955"] = "Brisa"
+weather["956"] = "Brisa"
+weather["957"] = "Risco de Vendaval"
+weather["958"] = "Vendaval"
+weather["959"] = "Vendaval Severo"
+weather["960"] = "Tempestade Violenta"
+weather["961"] = "Furacão"
 
 # User-defined chars (binary)
 cells = {}
@@ -224,44 +255,37 @@ def iuv_translator(iuv):
    if (( float(iuv) >= 8 ) and ( float(iuv) <= 10 )): return "Muito alto"
    return "Extremo"
 
-#Function to read weather data from CPTEC web site
-def parse_xml(location_code):
+#Function to read weather data from openweathermap.org
+def read_json(location_code):
    #Open HTTP connection
-   file = urllib2.urlopen('http://servicos.cptec.inpe.br/XML/cidade/'+location_code+'/previsao.xml')
+   file = urllib2.urlopen('http://api.openweathermap.org/data/2.5/forecast/daily?q='+location_code+'&mode=xml&units=metric&cnt=7')
    #Read xml data from web site
    data = file.read()
    #Close file (connection)
    file.close()
    #Return XML
-   return parseString(data)
+   return json.loads(data)
 
 #Function to read weather data from parsed XML
-def get_weather_data(dom,position):
+def get_weather_data(json_data,position):
    #Check if position is not grater and 3
    if ( position >= 4 ): return []
 
    #Read date
-   xmlTag = dom.getElementsByTagName('dia')[position].toxml()
-   dia=xmlTag.replace('<dia>','').replace('</dia>','')
+   dia = datetime.datetime.fromtimestamp(int(json_data['list'][position]['dt'])).strftime('%Y-%m-%d')
 
    #Read weather condition data
-   xmlTag = dom.getElementsByTagName('tempo')[position].toxml()
-   tempo=xmlTag.replace('<tempo>','').replace('</tempo>','')
+   temp0 = str(json_data['list'][0]['weather'][0]['id'])
 
    #Read higher expected temperature
-   xmlTag = dom.getElementsByTagName('maxima')[position].toxml()
-   max=xmlTag.replace('<maxima>','').replace('</maxima>','')
+   tmax = str(json_data['list'][0]['temp']['max']).split('.')[0]
 
    #Read minor expected temperature
-   xmlTag = dom.getElementsByTagName('minima')[position].toxml()
-   min=xmlTag.replace('<minima>','').replace('</minima>','')
-
-   #Read UV level
-   xmlTag = dom.getElementsByTagName('iuv')[position].toxml()
-   iuv=xmlTag.replace('<iuv>','').replace('</iuv>','')
-
+   xmlTag = json_data.getElementsByTagName('minima')[position].toxml()
+   tmin = str(json_data['list'][0]['temp']['min']).split('.')[0]
+   
    #Return weather data from given position
-   return [dia,tempo,max,min,iuv]
+   return [dia,tempo,tmax,tmin]
 
 #Function to show current system date
 def run_date(lcd,mRs,lock,proc_lock):
@@ -350,15 +374,17 @@ def run_clock(lcd,mRs,lock):
 
 #Function to show weather data
 def run_banner(lcd,lock):
+   #Location code
+   global locationCode
    #Create global var entry
    global goodBye
    #Start weather data read control (just to dont read weather data all the time)
    loop_count = 0
    #Initialize xml parse var
-   dom = None
+   json_data = None
    try:
       #Read weather data
-      dom = parse_xml("2586")
+      json_data = read_json(locationCode)
    #If weather data read fail show error message
    except (urllib2.HTTPError, urllib2.URLError, httplib.HTTPException), e:
       lock.acquire()
@@ -379,8 +405,8 @@ def run_banner(lcd,lock):
          if ( loop_count > 150 ):
             try:
                #Read weather data
-               dom = parse_xml("2586")
-            #If weather data read fail show error message 
+               json_data = read_json(locationCode)
+            #If weather data read fail, show error message 
             except (urllib2.HTTPError, urllib2.URLError, httplib.HTTPException), e:
                lock.acquire()
                try:
@@ -400,7 +426,7 @@ def run_banner(lcd,lock):
          #Parse XML to get weather data
          for position in [0,1,2,3]:
             #Store weather week day
-            weather_data = get_weather_data(dom,position)
+            weather_data = get_weather_data(json_data,position)
             text = week_day(weather_data[0]) + ":"
             #Append max and min into week day
             output = (text + "Max " + weather_data[2] + unichr(223) + " Min " + weather_data[3] + unichr(223)).ljust(20)
@@ -411,17 +437,6 @@ def run_banner(lcd,lock):
                lock.release()
             except:
                #grant that lock will be released in case of error
-               lock.release()
-            #wait to show next info
-            time.sleep(3)
-            #Append UV data into week day
-            output = (text + ("UV " + iuv_translator(weather_data[4])).center(20-len(text))).ljust(20)
-            #Display UV data
-            lock.acquire()
-            try:
-               lcd.lcd_display_string(output, 4)
-               lock.release()            
-            except:
                lock.release()
             #wait to show next info
             time.sleep(3)
